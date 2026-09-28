@@ -51,7 +51,20 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// ── Health Check ────────────────────────────
+// ── Root & Health Check ──────────────────────
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    name: 'InfraVault Public Infrastructure Asset Management API',
+    department: 'Roads & Buildings Department, Government of Gujarat',
+    version: '1.0.0',
+    documentation: '/api/health',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
