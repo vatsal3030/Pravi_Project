@@ -405,9 +405,9 @@ const getAssetsForMap = async (req, res, next) => {
           select: { id: true, orderCode: true, title: true, priority: true },
         },
         inspections: {
-          orderBy: { inspectionDate: 'desc' },
+          orderBy: { inspectedAt: 'desc' },
           take: 1,
-          select: { inspectionDate: true, overallRating: true },
+          select: { inspectedAt: true, conditionRating: true, conditionScore: true },
         },
       },
     });
