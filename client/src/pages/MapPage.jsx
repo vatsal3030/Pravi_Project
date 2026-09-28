@@ -11,11 +11,13 @@ import L from 'leaflet';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Filter, Layers, MapPin, AlertTriangle, RefreshCw,
-  ChevronRight, X, Navigation, Compass, Crosshair, ExternalLink
+  ChevronRight, X, Navigation, Compass, Crosshair, ExternalLink,
+  Wrench, Calendar, DollarSign, Activity, Shield
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { cachedGet } from '../lib/api';
 import { ASSET_CATEGORIES, ASSET_STATUSES, CONDITION_RATINGS } from '../lib/constants';
+import { formatIndianCurrency } from '../lib/formatters';
 import useThemeStore from '../store/themeStore';
 
 // Fix Leaflet default marker asset paths
@@ -212,16 +214,33 @@ export default function MapPage() {
     return assets.filter((asset) => {
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        const matchName = asset.name?.toLowerCase().includes(q);
-        const matchCode = asset.assetCode?.toLowerCase().includes(q);
+        const matchName = (asset.name || '').toLowerCase().includes(q);
+        const matchCode = (asset.assetCode || '').toLowerCase().includes(q);
         const matchAddr = (asset.address || '').toLowerCase().includes(q);
         if (!matchName && !matchCode && !matchAddr) return false;
       }
       if (selectedZone) {
         const z = selectedZone.toLowerCase();
-        const matchZone = (asset.zone || '').toLowerCase().includes(z);
-        const matchWard = (asset.ward || '').toLowerCase().includes(z);
-        if (!matchZone && !matchWard) return false;
+        const text = `${asset.zone || ''} ${asset.ward || ''} ${asset.address || ''} ${asset.name || ''}`.toLowerCase();
+        let match = false;
+        if (z === 'north west' || z === 'north-west') {
+          match = text.includes('north west') || text.includes('thaltej') || text.includes('bodakdev') || text.includes('sg highway') || text.includes('sarkhej');
+        } else if (z === 'west') {
+          match = text.includes('west zone') || text.includes('navrangpura') || text.includes('paldi') || text.includes('usmanpura') || text.includes('ashram road');
+        } else if (z === 'central') {
+          match = text.includes('central') || text.includes('jamalpur') || text.includes('lal darwaja') || text.includes('ellis bridge') || text.includes('riverfront');
+        } else if (z === 'north') {
+          match = text.includes('north zone') || text.includes('subhash bridge') || text.includes('shahibaug') || text.includes('dudheshwar');
+        } else if (z === 'south') {
+          match = text.includes('south') || text.includes('narol') || text.includes('vatva') || text.includes('maninagar') || text.includes('raska');
+        } else if (z === 'gandhinagar') {
+          match = text.includes('gandhinagar') || text.includes('capital') || text.includes('kudasan') || text.includes('ch-');
+        } else if (z === 'sanand') {
+          match = text.includes('sanand') || text.includes('bol');
+        } else {
+          match = text.includes(z);
+        }
+        if (!match) return false;
       }
       return true;
     });
@@ -677,21 +696,24 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* Selected Asset Slide-out Card */}
+        {/* Selected Asset Slide-out Card with Comprehensive Civil Data */}
         {selectedAsset && (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-full lg:w-80 glass-card p-4 overflow-y-auto shrink-0 shadow-lg flex flex-col justify-between rounded-2xl"
+            className="w-full lg:w-88 glass-card p-4 overflow-y-auto shrink-0 shadow-lg flex flex-col justify-between rounded-2xl"
           >
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-2">
-                <span className="text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wide">
-                  Asset Details
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wide">
+                    Live Asset Telemetry
+                  </span>
+                </div>
                 <button
                   onClick={() => setSelectedAsset(null)}
-                  className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10"
+                  className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -701,15 +723,20 @@ export default function MapPage() {
                 <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
                   {selectedAsset.name}
                 </h3>
-                <p className="text-xs font-mono text-slate-400 dark:text-slate-500 mt-0.5">
-                  {selectedAsset.assetCode}
-                </p>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-mono font-bold text-slate-500 bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded">
+                    {selectedAsset.assetCode}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    {selectedAsset.ward || selectedAsset.zone || 'Ahmedabad Circle'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed">
                   {selectedAsset.address || 'Ahmedabad Metropolitan Region'}
                 </p>
               </div>
 
-              {/* Badges */}
+              {/* Status & Category Badges */}
               <div className="flex flex-wrap gap-1.5">
                 <span className="badge badge-info">
                   {ASSET_CATEGORIES[selectedAsset.category]?.label || selectedAsset.category}
@@ -724,41 +751,111 @@ export default function MapPage() {
                 >
                   {selectedAsset.conditionRating}
                 </span>
+                <span className="badge badge-warning">
+                  {ASSET_STATUSES[selectedAsset.status]?.label || selectedAsset.status}
+                </span>
               </div>
 
-              {/* Coordinates info */}
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-1 text-xs">
-                <div className="flex justify-between text-slate-500 dark:text-slate-400">
-                  <span>GPS Lat / Lng:</span>
-                  <span className="font-mono text-slate-700 dark:text-slate-300">
-                    {selectedAsset.latitude?.toFixed(4)}, {selectedAsset.longitude?.toFixed(4)}
+              {/* Condition Health Score Bar */}
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-1.5">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-slate-600 dark:text-slate-300">Health Condition Index</span>
+                  <span className="font-bold font-mono" style={{ color: CONDITION_RATINGS[selectedAsset.conditionRating]?.color || '#16a34a' }}>
+                    {selectedAsset.conditionScore || 80}/100
                   </span>
                 </div>
-                <div className="flex justify-between text-slate-500 dark:text-slate-400">
-                  <span>Criticality Tier:</span>
-                  <span className="font-bold text-amber-500">Tier {selectedAsset.criticality || 3} / 5</span>
+                <div className="w-full h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${selectedAsset.conditionScore || 80}%`,
+                      backgroundColor: CONDITION_RATINGS[selectedAsset.conditionRating]?.color || '#16a34a',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Financial Valuation Metrics */}
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-2 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <DollarSign className="w-3.5 h-3.5 text-amber-500" /> Capital Valuation:
+                  </span>
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    {formatIndianCurrency(selectedAsset.purchaseCost || 0)}
+                  </span>
+                </div>
+                {selectedAsset.currentValue > 0 && (
+                  <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                    <span>Current Book Value:</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {formatIndianCurrency(selectedAsset.currentValue)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 pt-1 border-t border-black/5 dark:border-white/10">
+                  <span>Criticality Classification:</span>
+                  <span className="font-bold text-amber-500">Tier {selectedAsset.criticality || 3} of 5</span>
+                </div>
+              </div>
+
+              {/* Operational Metadata & Assigned Officer */}
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Officer In-Charge:</span>
+                  <span className="font-semibold">{selectedAsset.createdBy?.name || 'R&B Executive Staff'}</span>
+                </div>
+                {selectedAsset.installDate && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Commission Year:</span>
+                    <span className="font-semibold">{new Date(selectedAsset.installDate).getFullYear()}</span>
+                  </div>
+                )}
+                {selectedAsset.workOrders && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Active Work Orders:</span>
+                    <span className={`font-bold ${selectedAsset.workOrders.length > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500'}`}>
+                      {selectedAsset.workOrders.length} active
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-slate-400">GPS Coordinates:</span>
+                  <span className="font-mono text-[11px] text-slate-500">
+                    {selectedAsset.latitude?.toFixed(4)}, {selectedAsset.longitude?.toFixed(4)}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-black/5 dark:border-white/10 flex flex-col gap-2">
+            <div className="pt-3 border-t border-black/5 dark:border-white/10 flex flex-col gap-2 mt-3">
               <button
                 onClick={() => navigate(`/assets/${selectedAsset.id}`)}
-                className="btn-primary w-full text-xs py-2 flex items-center justify-center gap-1.5 cursor-pointer"
+                className="btn-primary w-full text-xs py-2 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
               >
-                Inspect Asset Profile
+                Inspect Complete Profile & Audit
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
 
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${selectedAsset.latitude},${selectedAsset.longitude}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-ghost w-full text-xs py-2 flex items-center justify-center gap-1.5"
-              >
-                Open in Google Maps
-                <ExternalLink className="w-3 h-3 text-slate-400" />
-              </a>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate(`/work-orders?assetId=${selectedAsset.id}`)}
+                  className="btn-ghost flex-1 text-xs py-2 flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Wrench className="w-3 h-3 text-amber-500" />
+                  Work Orders
+                </button>
+
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${selectedAsset.latitude},${selectedAsset.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-ghost flex-1 text-xs py-2 flex items-center justify-center gap-1"
+                >
+                  Google Maps
+                  <ExternalLink className="w-3 h-3 text-slate-400" />
+                </a>
+              </div>
             </div>
           </motion.div>
         )}

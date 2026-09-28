@@ -21,6 +21,7 @@ import useAuthStore from '../store/authStore';
 import {
   ASSET_CATEGORIES, ASSET_STATUSES, CONDITION_RATINGS
 } from '../lib/constants';
+import { formatIndianCurrency } from '../lib/formatters';
 import Breadcrumbs from '../components/shared/Breadcrumbs';
 import { DetailSkeleton } from '../components/shared/Skeletons';
 
@@ -581,7 +582,7 @@ export default function AssetDetailPage() {
           <div>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-semibold mb-1">Capital Value</p>
             <span className="text-sm font-bold text-slate-900 dark:text-white">
-              ₹{(asset.purchaseCost || 0).toLocaleString('en-IN')}
+              {formatIndianCurrency(asset.purchaseCost)}
             </span>
           </div>
 
@@ -701,15 +702,15 @@ export default function AssetDetailPage() {
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span className="text-slate-400">Procurement Cost:</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">₹{(asset.purchaseCost || 0).toLocaleString('en-IN')}</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{formatIndianCurrency(asset.purchaseCost)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">Installation Cost:</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">₹{(asset.installCost || 0).toLocaleString('en-IN')}</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{formatIndianCurrency(asset.installCost)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">Accumulated Maint.:</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">₹{(asset.totalMaintCost || 0).toLocaleString('en-IN')}</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{formatIndianCurrency(asset.totalMaintCost)}</span>
                     </div>
                   </div>
                 </div>

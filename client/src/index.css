@@ -57,7 +57,7 @@
 @layer base {
   :root {
     color-scheme: light;
-    font-size: 15.25px; /* Slightly increased base rem scale for crisp accessibility & readability */
+    font-size: 16.5px; /* Proportionally enlarged font scale for senior officer readability and crisp accessibility */
   }
 
   :root.dark {
@@ -68,8 +68,8 @@
     font-family: var(--font-sans);
     background-color: #f5f5f7;
     color: #1d1d1f;
-    font-size: 0.95rem;
-    line-height: 1.55;
+    font-size: 1rem;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.012em;

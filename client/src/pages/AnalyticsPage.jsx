@@ -19,6 +19,7 @@ import { cachedGet, invalidateApiCache } from '../lib/api';
 import { ASSET_CATEGORIES, ASSET_STATUSES, CONDITION_RATINGS, CHART_COLORS } from '../lib/constants';
 import { KPICardsSkeleton, ChartSkeleton } from '../components/shared/Skeletons';
 import useThemeStore from '../store/themeStore';
+import { formatIndianCurrency, formatChartCurrency } from '../lib/formatters';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -30,7 +31,11 @@ const CustomTooltip = ({ active, payload, label }) => {
           <span className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
           <span>{entry.name}:</span>
           <span className="font-bold">
-            {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
+            {typeof entry.value === 'number' && (entry.name?.includes('₹') || entry.name?.includes('Expenditure') || entry.name?.includes('Capital'))
+              ? formatIndianCurrency(entry.value)
+              : typeof entry.value === 'number'
+              ? entry.value.toLocaleString()
+              : entry.value}
           </span>
         </p>
       ))}
@@ -167,8 +172,8 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Portfolio Valuation"
-          value={`₹${(totalPurchase / 100000).toFixed(1)}L`}
-          subtitle={`Current Book: ₹${(totalCurrent / 100000).toFixed(1)}L`}
+          value={formatIndianCurrency(totalPurchase)}
+          subtitle={`Current Book: ${formatIndianCurrency(totalCurrent)}`}
           icon={DollarSign}
           color="#d97706" // Primary Amber
           delay={0}
@@ -192,7 +197,7 @@ export default function AnalyticsPage() {
         <StatCard
           title="Annual Depreciation"
           value={`${depreciationPct}%`}
-          subtitle={`₹${((totalPurchase - totalCurrent) / 100000).toFixed(1)}L cumulative`}
+          subtitle={`${formatIndianCurrency(totalPurchase - totalCurrent)} cumulative`}
           icon={TrendingUp}
           color="#ca8a04" // Warning Yellow
           delay={0.15}
@@ -228,7 +233,7 @@ export default function AnalyticsPage() {
               <YAxis
                 tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }}
                 axisLine={{ stroke: isDark ? 'rgba(255,255,255,0.1)' : '#cbd5e1' }}
-                tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`}
+                tickFormatter={(v) => formatChartCurrency(v)}
               />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="value" name="Capital Expenditure (₹)" radius={[6, 6, 0, 0]}>

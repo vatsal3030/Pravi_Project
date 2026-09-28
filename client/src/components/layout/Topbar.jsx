@@ -7,12 +7,13 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Bell, LogOut, ChevronDown,
-  Sun, Moon, User, Menu, Command
+  Sun, Moon, User, Menu, Command, Languages
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
 import useLayoutStore from '../../store/layoutStore';
+import useLanguageStore from '../../store/languageStore';
 import Breadcrumbs from '../shared/Breadcrumbs';
 import SpotlightSearch from '../shared/SpotlightSearch';
 import NotificationsPopover from '../shared/NotificationsPopover';
@@ -22,6 +23,7 @@ export default function Topbar() {
   const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const { toggleMobileDrawer } = useLayoutStore();
+  const { language, toggleLanguage, t } = useLanguageStore();
   const navigate = useNavigate();
 
   const [showProfile, setShowProfile] = useState(false);
@@ -102,6 +104,16 @@ export default function Topbar() {
                 <span className="hidden sm:inline">Dark</span>
               </>
             )}
+          </button>
+
+          {/* Bilingual English / Gujarati Language Toggle */}
+          <button
+            onClick={toggleLanguage}
+            title={language === 'en' ? 'ગુજરાતી ભાષા પસંદ કરો (Switch to Gujarati)' : 'Switch to English Language'}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer active:scale-95 shadow-xs"
+          >
+            <Languages className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>{language === 'en' ? 'ગુજરાતી' : 'English'}</span>
           </button>
 
           {/* Notification Center Popover */}

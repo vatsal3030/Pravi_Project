@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import useLayoutStore from '../../store/layoutStore';
+import useLanguageStore from '../../store/languageStore';
 import { LEVEL_TITLES } from '../../lib/constants';
 
 const navItems = [
@@ -103,6 +104,7 @@ const navItems = [
 export default function Sidebar() {
   const { sidebarCollapsed, toggleSidebar, mobileDrawerOpen, setMobileDrawerOpen } = useLayoutStore();
   const { user } = useAuthStore();
+  const { t } = useLanguageStore();
   const location = useLocation();
   const level = user?.currentLevel || 1;
 
@@ -155,7 +157,7 @@ export default function Sidebar() {
           <div key={section.section}>
             {!sidebarCollapsed && (
               <p className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 mb-1.5">
-                {section.section}
+                {t(section.section)}
               </p>
             )}
             <div className="space-y-1">
@@ -170,7 +172,7 @@ export default function Sidebar() {
                       key={item.path}
                       to={item.path}
                       onClick={() => setMobileDrawerOpen(false)}
-                      title={sidebarCollapsed ? item.label : undefined}
+                      title={sidebarCollapsed ? t(item.label) : undefined}
                       className={`
                         relative flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold
                         transition-all duration-200 group cursor-pointer
@@ -196,7 +198,7 @@ export default function Sidebar() {
                       </span>
 
                       {!sidebarCollapsed && (
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate">{t(item.label)}</span>
                       )}
                     </NavLink>
                   );
