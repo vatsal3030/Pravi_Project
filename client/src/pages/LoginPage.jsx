@@ -131,33 +131,77 @@ export default function LoginPage() {
           </form>
         </div>
 
-        {/* Demo Credentials Quick Click */}
+        {/* Demo Credentials Quick 1-Click Login */}
         <div className="mt-4 glass-card p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-            Quick Demo Accounts (Click to Fill)
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+              1-Click Demo Accounts (Click to Fill & Sign In)
+            </span>
+            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Evaluation Mode</span>
           </p>
           <div className="space-y-1.5">
             <button
-              onClick={() => setForm({ email: 'admin@infravault.io', password: 'admin123' })}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200/60 dark:border-slate-700/60 transition-all text-left cursor-pointer"
+              type="button"
+              onClick={async () => {
+                setForm({ email: 'admin@infravault.io', password: 'admin123' });
+                try {
+                  await login({ email: 'admin@infravault.io', password: 'admin123' });
+                  toast.success('Signed in as Executive Admin (Arjun Mehta)');
+                  navigate('/dashboard');
+                } catch {
+                  // filled
+                }
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-white/5 hover:bg-amber-500/10 border border-black/5 dark:border-white/10 transition-all text-left cursor-pointer group"
             >
               <div>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 block">Executive Engineer (Admin)</span>
-                <span className="text-[10px] text-slate-400 font-mono">admin@infravault.io</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200 block group-hover:text-amber-600">👑 Arjun Mehta (Executive Admin)</span>
+                <span className="text-[10px] text-slate-400 font-mono">admin@infravault.io • admin123</span>
               </div>
               <span className="badge badge-danger !text-[9px]">ADMIN</span>
             </button>
 
             <button
-              onClick={() => setForm({ email: 'inspector@infravault.io', password: 'inspector123' })}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200/60 dark:border-slate-700/60 transition-all text-left cursor-pointer"
+              type="button"
+              onClick={async () => {
+                setForm({ email: 'inspector@infravault.io', password: 'inspector123' });
+                try {
+                  await login({ email: 'inspector@infravault.io', password: 'inspector123' });
+                  toast.success('Signed in as Field Inspector (Priya Sharma)');
+                  navigate('/dashboard');
+                } catch {
+                  // filled
+                }
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-white/5 hover:bg-amber-500/10 border border-black/5 dark:border-white/10 transition-all text-left cursor-pointer group"
             >
               <div>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 block">Site Inspector</span>
-                <span className="text-[10px] text-slate-400 font-mono">inspector@infravault.io</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200 block group-hover:text-amber-600">🛠️ Priya Sharma (Field Inspector)</span>
+                <span className="text-[10px] text-slate-400 font-mono">inspector@infravault.io • inspector123</span>
               </div>
               <span className="badge badge-warning !text-[9px]">INSPECTOR</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                setForm({ email: 'viewer@infravault.io', password: 'viewer123' });
+                try {
+                  await login({ email: 'viewer@infravault.io', password: 'viewer123' });
+                  toast.success('Signed in as Planning Cell Viewer (Rahul Patel)');
+                  navigate('/dashboard');
+                } catch {
+                  // filled
+                }
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-white/5 hover:bg-amber-500/10 border border-black/5 dark:border-white/10 transition-all text-left cursor-pointer group"
+            >
+              <div>
+                <span className="font-bold text-slate-800 dark:text-slate-200 block group-hover:text-amber-600">🏛️ Rahul Patel (GIS / Planning Cell)</span>
+                <span className="text-[10px] text-slate-400 font-mono">viewer@infravault.io • viewer123</span>
+              </div>
+              <span className="badge badge-info !text-[9px]">VIEWER</span>
             </button>
           </div>
         </div>
