@@ -1,0 +1,426 @@
+// ============================================
+// InfraVault — Prisma Schema
+// Municipal Infrastructure Asset Management
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+enum Role {
+  ADMIN
+  INSPECTOR
+  VIEWER
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  name          String
+  role          Role     @default(VIEWER)
+  avatar        String?
+  phone         String?
+  department    String?
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Gamification
+  totalPoints   Int      @default(0)
+  currentLevel  Int      @default(1)
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  lastActiveDate DateTime?
+
+  // Relations
+  createdAssets      Asset[]             @relation("AssetCreator")
+  assignedWorkOrders WorkOrder[]         @relation("WorkOrderAssignee")
+  createdWorkOrders  WorkOrder[]         @relation("WorkOrderCreator")
+  inspections        Inspection[]
+  gamificationEvents GamificationEvent[]
+  notifications      Notification[]
+  badges             UserBadge[]
+  activityLogs       ActivityLog[]
+  refreshTokens      RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+// ============================================
+// ASSET MANAGEMENT
+// ============================================
+
+enum AssetCategory {
+  ROAD
+  BRIDGE
+  BUILDING
+  STREETLIGHT
+  WATER_PIPELINE
+  DRAIN
+  FOOTPATH
+}
+
+enum AssetStatus {
+  PLANNED
+  PROCURED
+  INSTALLED
+  ACTIVE
+  UNDER_MAINTENANCE
+  DECOMMISSIONED
+  DISPOSED
+}
+
+enum ConditionRating {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  CRITICAL
+}
+
+model Asset {
+  id              String        @id @default(uuid())
+  assetCode       String        @unique  // e.g., RD-2024-0001
+  name            String
+  description     String?
+  category        AssetCategory
+  status          AssetStatus   @default(PLANNED)
+  conditionRating ConditionRating @default(GOOD)
+  conditionScore  Int           @default(80) // 0-100
+
+  // Location
+  latitude        Float?
+  longitude       Float?
+  address         String?
+  ward            String?       // Municipal ward
+  zone            String?       // City zone
+
+  // Lifecycle dates
+  plannedDate     DateTime?
+  procuredDate    DateTime?
+  installDate     DateTime?
+  commissionDate  DateTime?
+  expectedEOL     DateTime?     // Expected End of Life
+  decommissionDate DateTime?
+
+  // Financial
+  purchaseCost    Float         @default(0)
+  installCost     Float         @default(0)
+  currentValue    Float         @default(0) // Depreciated value
+  totalMaintCost  Float         @default(0) // Accumulated maintenance cost
+
+  // Risk & Intelligence
+  riskScore       Float         @default(0) // 0-100
+  criticality     Int           @default(3) // 1-5 (5 = most critical)
+  predictedEOL    DateTime?     // AI-predicted end of life
+
+  // Metadata (type-specific fields stored as JSON)
+  metadata        Json?         // Flexible fields per asset type
+
+  // QR Code
+  qrCode          String?
+
+  // Media
+  images          String[]      // Array of image URLs
+  documents       String[]      // Array of document URLs
+
+  // Relations
+  createdById     String
+  createdBy       User          @relation("AssetCreator", fields: [createdById], references: [id])
+
+  lifecycleEvents AssetLifecycleEvent[]
+  workOrders      WorkOrder[]
+  inspections     Inspection[]
+  maintenanceRecords MaintenanceRecord[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+
+  @@index([deletedAt])
+  @@index([createdById])
+  @@index([createdAt])
+  @@index([category])
+  @@index([status])
+  @@index([conditionRating])
+  @@index([ward])
+  @@map("assets")
+}
+
+// Full audit trail of every status change
+model AssetLifecycleEvent {
+  id          String      @id @default(uuid())
+  assetId     String
+  asset       Asset       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  fromStatus  AssetStatus?
+  toStatus    AssetStatus
+  notes       String?
+  changedBy   String      // User ID
+  changedAt   DateTime    @default(now())
+
+  @@index([assetId])
+  @@map("asset_lifecycle_events")
+}
+
+// ============================================
+// WORK ORDERS
+// ============================================
+
+enum WorkOrderPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum WorkOrderStatus {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkOrderType {
+  CORRECTIVE       // Fix something broken
+  PREVENTIVE       // Scheduled maintenance
+  INSPECTION        // Routine inspection
+  EMERGENCY         // Urgent fix
+  IMPROVEMENT       // Upgrade/enhancement
+}
+
+model WorkOrder {
+  id            String            @id @default(uuid())
+  orderCode     String            @unique // e.g., WO-2024-0001
+  title         String
+  description   String
+  type          WorkOrderType     @default(CORRECTIVE)
+  priority      WorkOrderPriority @default(MEDIUM)
+  status        WorkOrderStatus   @default(OPEN)
+
+  // Relations
+  assetId       String
+  asset         Asset             @relation(fields: [assetId], references: [id])
+  assigneeId    String?
+  assignee      User?             @relation("WorkOrderAssignee", fields: [assigneeId], references: [id])
+  createdById   String
+  createdBy     User              @relation("WorkOrderCreator", fields: [createdById], references: [id])
+
+  // Dates
+  dueDate       DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  // Cost
+  estimatedCost Float             @default(0)
+  actualCost    Float             @default(0)
+
+  // Notes & media
+  notes         String?
+  attachments   String[]
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  deletedAt     DateTime?
+
+  @@index([deletedAt])
+  @@index([createdById])
+  @@index([createdAt])
+  @@index([assetId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([priority])
+  @@map("work_orders")
+}
+
+// ============================================
+// INSPECTIONS
+// ============================================
+
+model Inspection {
+  id              String          @id @default(uuid())
+  inspectionCode  String          @unique // e.g., INS-2024-0001
+  assetId         String
+  asset           Asset           @relation(fields: [assetId], references: [id])
+  inspectorId     String
+  inspector       User            @relation(fields: [inspectorId], references: [id])
+
+  // Scoring
+  conditionScore  Int             // 0-100
+  conditionRating ConditionRating
+
+  // Details
+  findings        Json?           // Structured findings
+  notes           String?
+  recommendations String?
+  photos          String[]
+
+  // Dates
+  scheduledDate   DateTime?
+  inspectedAt     DateTime        @default(now())
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  @@index([deletedAt])
+  @@index([createdAt])
+  @@index([assetId])
+  @@index([inspectorId])
+  @@map("inspections")
+}
+
+// ============================================
+// MAINTENANCE
+// ============================================
+
+enum MaintenanceType {
+  REPAIR
+  REPLACEMENT
+  UPGRADE
+  CLEANING
+  PAINTING
+  CALIBRATION
+}
+
+model MaintenanceRecord {
+  id              String          @id @default(uuid())
+  assetId         String
+  asset           Asset           @relation(fields: [assetId], references: [id])
+  type            MaintenanceType
+  description     String
+  performedBy     String          // Name or team
+  cost            Float           @default(0)
+  duration        Int?            // Minutes
+  partsUsed       Json?           // Parts/materials used
+  performedAt     DateTime        @default(now())
+  createdAt       DateTime        @default(now())
+
+  @@index([assetId])
+  @@map("maintenance_records")
+}
+
+// ============================================
+// GAMIFICATION
+// ============================================
+
+enum GamificationAction {
+  INSPECTION_COMPLETED
+  WORK_ORDER_CREATED
+  WORK_ORDER_COMPLETED
+  ASSET_DOCUMENTED
+  CRITICAL_ISSUE_FOUND
+  STREAK_BONUS
+  FIRST_OF_DAY_BONUS
+  BADGE_EARNED
+  LEVEL_UP
+}
+
+model GamificationEvent {
+  id        String             @id @default(uuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    GamificationAction
+  points    Int
+  metadata  Json?              // Additional context
+  createdAt DateTime           @default(now())
+
+  @@index([userId])
+  @@map("gamification_events")
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  code        String      @unique  // e.g., FIRST_LIGHT, ROAD_WARRIOR
+  name        String
+  description String
+  icon        String      // Emoji or icon name
+  requirement String      // Human-readable requirement
+  threshold   Int         // Numeric threshold to earn
+  category    String      // e.g., inspection, work_order, streak
+
+  users       UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt  DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+enum NotificationType {
+  WORK_ORDER_ASSIGNED
+  WORK_ORDER_COMPLETED
+  INSPECTION_DUE
+  ASSET_CRITICAL
+  BADGE_EARNED
+  LEVEL_UP
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  link      String?          // URL to navigate to
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ============================================
+// ACTIVITY LOG
+// ============================================
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String   // e.g., "created_asset", "completed_inspection"
+  entityType  String   // e.g., "Asset", "WorkOrder"
+  entityId    String
+  details     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("activity_logs")
+}
